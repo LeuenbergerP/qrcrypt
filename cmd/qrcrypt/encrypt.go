@@ -9,7 +9,6 @@ import (
 
 	"github.com/LeuenbergerP/qrcrypt/pkg/qrcrypt"
 	"github.com/mdp/qrterminal/v3"
-
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +22,10 @@ var encryptCmd = &cobra.Command{
 		content := args[1]
 		keyPhrase := args[2]
 		res := qrcrypt.Encrypt([]byte(content), keyPhrase)
-		writeToFile(res, fileName)
+		err := writeToFile(res, fileName)
+		if err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 
@@ -33,21 +35,21 @@ func writeToFile(data []byte, filename string) error {
 		log.Fatal(err)
 		return err
 	}
-	defer f.Close()
-	encoded := base64Encode(data)
+	defer func() {
+		err = f.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	encoded := b64.StdEncoding.EncodeToString(data)
 	qrCode := qrCode(encoded)
 	fmt.Println(qrCode)
 	fmt.Println(encoded)
 	_, err2 := f.WriteString(encoded)
 	if err2 != nil {
-		log.Fatal(err2)
 		return err2
 	}
 	return nil
-}
-
-func base64Encode(data []byte) string {
-	return b64.StdEncoding.EncodeToString([]byte(data))
 }
 
 func qrCode(val string) string {
